@@ -1,4 +1,4 @@
-from django.db.models import Count, F, Prefetch, Q
+from django.db.models import F, Prefetch, Q
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.pagination import paginate
@@ -22,6 +22,7 @@ router = Router()
     response=list[PostListOut],
     summary="List all published posts",
     description="Retrieve a paginated list of all published blog posts, including their authors and tags.",  # noqa: E501
+    tags=["Posts"]
 )
 @paginate
 def list_posts(request):
@@ -39,6 +40,7 @@ def list_posts(request):
     response=list[PostListOut],
     summary="Search published posts",
     description="Retrieve a paginated list of published blog posts matching the search query.",
+    tags=["Posts"]
 )
 @paginate
 def search_posts(request, q: str):
@@ -59,6 +61,7 @@ def search_posts(request, q: str):
     response=list[PostListOut],
     summary="List posts by tag",
     description="Retrieve a paginated list of published blog posts associated with a specific tag.",
+    tags=["Posts"]
 )
 @paginate
 def posts_by_tag(request, slug: str):
@@ -76,6 +79,7 @@ def posts_by_tag(request, slug: str):
     response=PostDetailOut,
     summary="Get post details",
     description="Retrieve detailed information about a specific post, including its comments.",
+    tags=["Posts"]
 )
 def get_post(request, post_id: int):
     post = get_object_or_404(
@@ -98,6 +102,7 @@ def get_post(request, post_id: int):
     response=PostCreateOut,
     summary="Create a new post",
     description="Create a new blog post with the provided details.",
+    tags=["Posts"]
 )
 def create_post(request, payload: PostCreateIn):
     author = get_object_or_404(User, id=payload.author_id)
@@ -116,6 +121,7 @@ def create_post(request, payload: PostCreateIn):
     response=CommentCreateOut,
     summary="Create a new comment",
     description="Create a new comment for a specific post.",
+    tags=["Posts"]
 )
 def create_comment(request, post_id: int, payload: CommentCreateIn):
     post = get_object_or_404(Post, id=post_id)
@@ -129,6 +135,7 @@ def create_comment(request, post_id: int, payload: CommentCreateIn):
     response=UserDetailOut,
     summary="Find user by email",
     description="Retrieve detailed information about a user based on their email address.",
+    tags=["Users"]
 )
 def find_user_by_email(request, email: str):
 
@@ -150,6 +157,7 @@ def find_user_by_email(request, email: str):
     response=UserDetailOut,
     summary="Get user details",
     description="Retrieve detailed information about a specific user.",
+    tags=["Users"]
 )
 def get_user(request, user_id: int):
     user = get_object_or_404(User, id=user_id)
