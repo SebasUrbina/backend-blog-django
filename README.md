@@ -2,27 +2,129 @@
 
 A small content service: users, posts, comments, tags. Django + Ninja + Postgres.
 
-## Running it locally
+---
 
-Prereqs:
+## 🚀 Getting Started & Local Setup
 
-- [mise](https://mise.jdx.dev/) — manages the Python toolchain and uv.
-- A running PostgreSQL 16 instance on `localhost:5432` with a database called `backend_devops_interview` accessible to `postgres`/`postgres`. (Local install, `brew install postgresql@16`, host-mode docker, whatever you have.)
+We support two ways to run this application locally. **Option A** is the recommended way for a fresh laptop (requires only Docker), while **Option B** is optimized for local development and debugging (requires Python/Mise/UV).
 
-Steps:
+---
 
+### 🐳 Option A: Zero-Install Quick Start (Docker Compose)
+This is the easiest way to get the application up and running with a single command.
+
+#### Prereqs
+* [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
+
+#### Steps
+1. **Create your environment file:**
+   Copy the example file to `.env`:
+   ```sh
+   cp .env.example .env
+   ```
+
+2. **Build and start the services:**
+   This command pulls the database and builds the API container:
+   ```sh
+   docker-compose up -d --build
+   ```
+
+3. **Run database migrations:**
+   ```sh
+   docker-compose exec api python manage.py migrate
+   ```
+
+4. **Seed the database:**
+   ```sh
+   docker-compose exec api python manage.py seed
+   ```
+
+Your backend service will be up at **http://localhost:8000**!
+* **API Interactive Documentation:** [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
+* **To stop services:** `docker-compose down`
+
+---
+
+### 💻 Option B: Local Native Setup (For Development)
+If you are actively developing and want rapid-rebuilds or native toolchain support.
+
+#### Prereqs
+* [mise](https://mise.jdx.dev/) — manages the Python toolchain and uv.
+* A running PostgreSQL 16 instance on `localhost:5432` with a database called `backend_devops_interview` accessible to `postgres`/`postgres`.
+
+#### Steps
+1. **Install Python & toolchain via mise:**
+   ```sh
+   mise install
+   ```
+
+2. **Install project dependencies:**
+   We use `uv` for lightning-fast package management:
+   ```sh
+   uv sync
+   ```
+
+3. **Create the PostgreSQL database:**
+   *(Ensure your Postgres server is running)*
+   ```sh
+   createdb backend_devops_interview
+   ```
+
+4. **Run migrations and seed the database:**
+   ```sh
+   uv run python manage.py migrate
+   uv run python manage.py seed
+   ```
+
+5. **Start the development server:**
+   ```sh
+   uv run python manage.py runserver
+   ```
+   *Alternative high-performance ASGI server:*
+   ```sh
+   uv run uvicorn core.asgi:application --host 0.0.0.0 --port 8000 --reload
+   ```
+
+---
+
+## 🧪 Testing and Code Quality
+
+### Running Unit & Integration Tests
+To run the test suite and verify everything is working:
 ```sh
-mise install
-uv sync
-createdb backend_devops_interview        # or however you create it
-uv run python manage.py migrate
-uv run python manage.py seed
-uv run python manage.py runserver
+uv run pytest
 ```
 
-API docs at <http://localhost:8000/api/docs>.
+### Pre-commit Hooks (Formatting & Linting)
+We use `ruff` and `black` to keep code clean and standardized. Install pre-commit hooks locally:
+```sh
+uv run pre-commit install
+```
+To run the hooks manually across all files:
+```sh
+uv run pre-commit run --all-files
+```
 
-Seeding writes ~100k posts and ~500k comments. Expect a few minutes.
+---
+
+## ⚡ Performance Testing with Locust
+We include a Locust-based performance test script (`locustfile.py`) to measure API endpoints' latencies under concurrent user load.
+
+### 1. Web UI Mode (Recommended)
+1. Ensure the API service is running.
+2. Start Locust:
+   ```sh
+   uv run locust -f locustfile.py
+   ```
+3. Open your browser at [http://localhost:8089](http://localhost:8089).
+4. Enter target host `http://localhost:8000`, the number of concurrent users, spawn rate, and click **Start swarming**.
+
+### 2. Headless Mode (Terminal-only)
+To run an automated performance test directly in the terminal for a specific duration:
+```sh
+uv run locust --headless -u 100 -r 10 --run-time 1m --host http://localhost:8000
+```
+
 
 ## What the API does
 
