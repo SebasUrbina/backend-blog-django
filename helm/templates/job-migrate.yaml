@@ -1,0 +1,97 @@
+{{- if .Values.django.runMigrations -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "django-blog.fullname" . }}-migrate
+  labels:
+    {{- include "django-blog.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "3"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 5
+  template:
+    metadata:
+      name: {{ include "django-blog.fullname" . }}-migrate
+      labels:
+        {{- include "django-blog.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: OnFailure
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wait-for-db
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "django-blog.fullname" . }}-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "django-blog.fullname" . }}-secrets
+                  key: DB_PASSWORD
+          command:
+            - python
+            - -c
+            - |
+              import socket
+              import time
+              import os
+              import sys
+
+              host = os.environ.get("DB_HOST", "localhost")
+              port = int(os.environ.get("DB_PORT", 5432))
+              print(f"Waiting for database at {host}:{port}...", flush=True)
+              start_time = time.time()
+              while True:
+                  try:
+                      with socket.create_connection((host, port), timeout=3):
+                          print("Database is up and reachable!", flush=True)
+                          sys.exit(0)
+                  except OSError as e:
+                      if time.time() - start_time > 120:
+                          print("Timeout waiting for database.", file=sys.stderr, flush=True)
+                          sys.exit(1)
+                      print(f"Database not ready yet ({e}). Retrying in 2 seconds...", flush=True)
+                      time.sleep(2)
+      containers:
+        - name: migrate
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "django-blog.fullname" . }}-config
+          env:
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "django-blog.fullname" . }}-secrets
+                  key: DJANGO_SECRET_KEY
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "django-blog.fullname" . }}-secrets
+                  key: DB_PASSWORD
+          command:
+            - sh
+            - -c
+            - |
+              echo "Running Django migrations..."
+              python manage.py migrate --noinput
+              {{- if .Values.django.seedData }}
+              echo "Seeding database..."
+              python manage.py seed
+              {{- end }}
+              echo "Migration and Seeding jobs completed successfully!"
+{{- end }}
