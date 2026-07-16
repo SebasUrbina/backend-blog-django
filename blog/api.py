@@ -81,9 +81,8 @@ def create_post(request, payload: PostCreateIn):
         title=payload.title,
         body=payload.body,
     )
-    for slug in payload.tag_slugs:
-        tag = Tag.objects.get(slug=slug)
-        post.tags.add(tag)
+    tags = Tag.objects.filter(slug__in=payload.tag_slugs)
+    post.tags.set(tags)
     return {"id": post.id, "title": post.title}
 
 
