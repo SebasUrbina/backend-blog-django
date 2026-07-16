@@ -1,6 +1,7 @@
 from datetime import datetime
-from pydantic import Field
+
 from ninja import Schema
+from pydantic import Field
 
 
 class AuthorOut(Schema):
