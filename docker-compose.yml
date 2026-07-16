@@ -1,0 +1,42 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: app:${app:-latest}
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    network_mode: "service:db"
+    command: ["uvicorn", "core.asgi:application", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - .:/app
+      - /app/.venv
+
+  db:
+    image: postgres:16-alpine
+    container_name: app-db
+    env_file:
+      - .env
+    environment:
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD}
+      POSTGRES_USER: ${DB_POSTGRES_USER}
+      POSTGRES_DB: ${DB_POSTGRES_DB}
+    ports:
+      - "8000:8000"  # Para acceder a la API de Django desde tu navegador/PC
+      - "5432:5432"  # Para acceder a la Base de Datos desde tu PC (DBeaver, psql, etc.)
+    volumes:
+      - app-db-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$DB_POSTGRES_USER -d $$DB_POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  app-db-data:
+    name: app-db-data
