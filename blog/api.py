@@ -17,7 +17,12 @@ from blog.schemas import (
 router = Router()
 
 
-@router.get("/posts", response=list[PostListOut])
+@router.get(
+    "/posts",
+    response=list[PostListOut],
+    summary="List all published posts",
+    description="Retrieve a paginated list of all published blog posts, including their authors and tags.",  # noqa: E501
+)
 @paginate
 def list_posts(request):
     posts = (
@@ -29,7 +34,12 @@ def list_posts(request):
     return posts
 
 
-@router.get("/posts/search", response=list[PostListOut])
+@router.get(
+    "/posts/search",
+    response=list[PostListOut],
+    summary="Search published posts",
+    description="Retrieve a paginated list of published blog posts matching the search query.",
+)
 @paginate
 def search_posts(request, q: str):
     posts = (
@@ -44,7 +54,12 @@ def search_posts(request, q: str):
     return posts
 
 
-@router.get("/posts/by-tag/{slug}", response=list[PostListOut])
+@router.get(
+    "/posts/by-tag/{slug}",
+    response=list[PostListOut],
+    summary="List posts by tag",
+    description="Retrieve a paginated list of published blog posts associated with a specific tag.",
+)
 @paginate
 def posts_by_tag(request, slug: str):
     posts = (
@@ -56,7 +71,12 @@ def posts_by_tag(request, slug: str):
     return posts
 
 
-@router.get("/posts/{post_id}", response=PostDetailOut)
+@router.get(
+    "/posts/{post_id}",
+    response=PostDetailOut,
+    summary="Get post details",
+    description="Retrieve detailed information about a specific post, including its comments.",
+)
 def get_post(request, post_id: int):
     post = get_object_or_404(
         Post.objects.select_related("author").prefetch_related(
@@ -73,7 +93,12 @@ def get_post(request, post_id: int):
     return post
 
 
-@router.post("/posts", response=PostCreateOut)
+@router.post(
+    "/posts",
+    response=PostCreateOut,
+    summary="Create a new post",
+    description="Create a new blog post with the provided details.",
+)
 def create_post(request, payload: PostCreateIn):
     author = get_object_or_404(User, id=payload.author_id)
     post = Post.objects.create(
@@ -86,7 +111,12 @@ def create_post(request, payload: PostCreateIn):
     return {"id": post.id, "title": post.title}
 
 
-@router.post("/posts/{post_id}/comments", response=CommentCreateOut)
+@router.post(
+    "/posts/{post_id}/comments",
+    response=CommentCreateOut,
+    summary="Create a new comment",
+    description="Create a new comment for a specific post.",
+)
 def create_comment(request, post_id: int, payload: CommentCreateIn):
     post = get_object_or_404(Post, id=post_id)
     author = get_object_or_404(User, id=payload.author_id)
@@ -94,7 +124,12 @@ def create_comment(request, post_id: int, payload: CommentCreateIn):
     return {"id": comment.id}
 
 
-@router.get("/users/find", response=UserDetailOut)
+@router.get(
+    "/users/find",
+    response=UserDetailOut,
+    summary="Find user by email",
+    description="Retrieve detailed information about a user based on their email address.",
+)
 def find_user_by_email(request, email: str):
 
     user = get_object_or_404(User, email=email)
@@ -110,7 +145,12 @@ def find_user_by_email(request, email: str):
     )
 
 
-@router.get("/users/{user_id}", response=UserDetailOut)
+@router.get(
+    "/users/{user_id}",
+    response=UserDetailOut,
+    summary="Get user details",
+    description="Retrieve detailed information about a specific user.",
+)
 def get_user(request, user_id: int):
     user = get_object_or_404(User, id=user_id)
     return UserDetailOut(
