@@ -32,6 +32,14 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     tags = models.ManyToManyField(Tag, related_name="posts", blank=True)
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=["is_published", "-created_at"],
+                name="post_pub_created_idx",
+            )
+        ]
+
     def __str__(self) -> str:
         return self.title
 
